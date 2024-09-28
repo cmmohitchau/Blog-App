@@ -1,3 +1,5 @@
+// backend/route/user.js
+
 const express = require("express");
 const router = express.Router();
 const zod = require("zod")
@@ -12,7 +14,7 @@ const validateUser = zod.object({
     username: zod.string().email(),
     firstName: zod.string(),
     lastName: zod.string(),
-    password: zod.string()
+    password: zod.string().min(6 , "Password must be at least 6 characters long")
 })
 
 router.post("/signup", async(req, res) => {
@@ -20,7 +22,7 @@ router.post("/signup", async(req, res) => {
     const { success } = validateUser.safeParse(body);
 
     if (!success) {
-        return res.status(411).json({
+        return res.status(400).json({
             msg: "Incorrect input"
         })
     }
@@ -28,7 +30,7 @@ router.post("/signup", async(req, res) => {
     const existinguser = await User.findOne({ username: body.username });
 
     if (existinguser) {
-        return res.status(403).json({
+        return res.status(409).json({
             msg: "user already exist"
         })
     }
@@ -54,15 +56,15 @@ router.post("/signup", async(req, res) => {
             userId
         },JWT_SECRET)
         
-        return res.status(200).json({
+        return res.status(201).json({
             msg: "Signup successful",
             token : token
         })
     } catch (err) {
+        console.log("error during user signup: " , err);
+        
         return res.status(500).json({
             msg: "Error while sign up",
-            Error: err,
-            status : res.status
         })
     }
 });
@@ -79,14 +81,14 @@ router.post("/signin", async(req, res) => {
     const { success } = signInBody.safeParse(body);
 
     if (!success) {
-        return res.status(411).json({
+        return res.status(400).json({
             msg: "Incorrect input"
         })
     }
     const existingUser = await User.findOne({username : body.username});
 
     if(!existingUser) {
-        return res.status(411).json({
+        return res.status(404).json({
             msg  : "user not found"
         })
     }
@@ -94,7 +96,7 @@ router.post("/signin", async(req, res) => {
 
     try {
         const match = await bcrypt.compare(body.password, existingUser.hashed_password);
-        const userId = existingUser.user_id;
+        const userId = existingUser._id;
         
         
         if (match) {
@@ -107,6 +109,10 @@ router.post("/signin", async(req, res) => {
                 msg: "Login successful",
                 token: token
             })
+        } else {
+            return res.status(401).json({ 
+                msg: "Invalid credentials"
+            });
         }
  
     } catch (err) {
