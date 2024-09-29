@@ -16,7 +16,6 @@ router.post('/' ,async (req , res) => {
             return res.status(400).json({ message: 'Title and content are required' })
         }
         const userId = req.userId
-        console.log("in post blog");
         
 
         const newBlog =await Blog.create({
@@ -62,11 +61,11 @@ router.put('/:id', async (req, res) => {
   });
 
 router.get('/bulk' , async (req , res) => {
-
+    
     try {
-        console.log("in bulk");
         
-    const blogs = await Blog.find({});
+    const blogs = await Blog.find({}).populate('authorId');
+    
     return res.json({
         blogs : blogs
     })
@@ -81,37 +80,17 @@ router.get('/bulk' , async (req , res) => {
 
 })
 
-router.get('/:userId' , async(req,res) => {
-    try {
-        const userId = req.params.userId;
-        console.log(userId);
-        
-        const blogs = await Blog.find({authorId : userId});
-        console.log("fetched blog");
-        console.log(blogs);
-        
-        
-        if(!blogs) {
-            res.status(404).json({msg : "There is no blog"});
-        }
-        console.log("after response");
-        
-        res.status(200).json({blogs : blogs})
-    } catch(e) {
-        res.status(500).json({
-            msg : "server error while fetchinng blogs from author"
-        })
-    }
-})
 
 router.get('/:id' , async(req,res) => {
     try {
         const id = req.params.id;
         
-        const response = await Blog.findById(id);
+        const blog = await Blog.findById(id).populate('authorId');
       
         
-        return res.status(200).json(response);
+        return res.status(200).json({
+            blog : blog
+        });
     } catch(e) {
         return res.status(500).json({
             msg : "server error for getting blog"
