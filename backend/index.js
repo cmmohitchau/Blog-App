@@ -1,5 +1,7 @@
+// backend/index.js
 const express = require("express")
 const cors = require("cors")
+require("./db.js")
 const app = express()
 
 
